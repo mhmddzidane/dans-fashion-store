@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Page404 from "./pages/Page404";
 import Success from "./pages/Success";
 import { useSelector } from "react-redux";
+import Profile from "./pages/Profile";
 
 function App() {
   const user = useSelector((state) => state.user.currentUser);
@@ -26,6 +27,7 @@ function App() {
         <Route path="/productlist/:category" element={<ProductList />} />
         <Route path="*" element={<Page404 />} />
         <Route path="/success" element={<Success />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   );

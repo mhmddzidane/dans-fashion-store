@@ -2,13 +2,14 @@ import { Add, Remove } from "@material-ui/icons";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Helmet, HelmetProvider } from "react-helmet-async";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import StripeCheckout from "react-stripe-checkout";
 import styled from "styled-components";
 import Announcement from "../components/Announcement";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
+import { emptyCarts } from "../redux/cartRedux";
 import { mobile } from "../responsive";
 
 const KEY = process.env.STRIPE_PUBLIC;
@@ -168,6 +169,7 @@ const Cart = () => {
   const [stripeToken, setStripeToken] = useState(null);
   const cart = useSelector((state) => state.cart);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const rupiah = (number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -182,6 +184,11 @@ const Cart = () => {
 
   const onToken = (token) => {
     setStripeToken(token);
+  };
+
+  const emptyCart = () => {
+    console.log(cart);
+    dispatch(emptyCarts());
   };
 
   useEffect(() => {
@@ -219,78 +226,90 @@ const Cart = () => {
       <Wrapper>
         <Title>YOUR BAG</Title>
         <Top>
-          <TopButton>CONTINUE SHOPPING</TopButton>
+          <a href="/">
+            <TopButton>CONTINUE SHOPPING</TopButton>
+          </a>
           <TopTexts>
-            <TopText>Shopping Bag(2)</TopText>
+            <TopText>Shopping Bag({cart.quantity})</TopText>
             <TopText>Your Wishlist (0)</TopText>
           </TopTexts>
-          <TopButton type="filled">CHECKOUT NOW</TopButton>
+          <TopButton type="filled" onClick={() => emptyCart()}>
+            EMPTY CART
+          </TopButton>
         </Top>
         <Bottom>
           <Info>
-            {cart.products.map((product) => (
-              <Product key={product._id}>
-                <ProductDetail>
-                  <Image src={product.img} />
-                  <Details>
-                    <ProductName>
-                      <b>Product:</b> {product.title}
-                    </ProductName>
-                    <ProductId>
-                      <b>ID:</b> {product._id}
-                    </ProductId>
-                    <ProductColor color={product.color} />
-                    <ProductSize>
-                      <b>Size:</b> {product.size}
-                    </ProductSize>
-                  </Details>
-                </ProductDetail>
-                <PriceDetail>
-                  <ProductAmountContainer>
-                    <Add />
-                    <ProductAmount>{product.quantity}</ProductAmount>
-                    <Remove />
-                  </ProductAmountContainer>
-                  <ProductPrice>
-                    {rupiah(totalBarang(product.price, product.quantity))}
-                  </ProductPrice>
-                </PriceDetail>
-              </Product>
-            ))}
+            {cart.quantity != 0 ? (
+              cart.products.map((product) => (
+                <Product key={product._id}>
+                  <ProductDetail>
+                    <Image src={product.img} />
+                    <Details>
+                      <ProductName>
+                        <b>Product:</b> {product.title}
+                      </ProductName>
+                      <ProductId>
+                        <b>ID:</b> {product._id}
+                      </ProductId>
+                      <ProductColor color={product.color} />
+                      <ProductSize>
+                        <b>Size:</b> {product.size}
+                      </ProductSize>
+                    </Details>
+                  </ProductDetail>
+                  <PriceDetail>
+                    <ProductAmountContainer>
+                      {/* <Add /> */}
+                      <ProductAmount>
+                        Quantity : {product.quantity}
+                      </ProductAmount>
+                      {/* <Remove style={{ cursor: `pointer` }} /> */}
+                    </ProductAmountContainer>
+                    <ProductPrice>
+                      {rupiah(totalBarang(product.price, product.quantity))}
+                    </ProductPrice>
+                  </PriceDetail>
+                </Product>
+              ))
+            ) : (
+              <p>NO PRODUCTS ON CART</p>
+            )}
             <Hr />
           </Info>
-          <Summary>
-            <SummaryTitle>ORDER SUMMARY</SummaryTitle>
-            <SummaryItem>
-              <SummaryItemText>Subtotal</SummaryItemText>
-              <SummaryItemPrice>{rupiah(cart.total)}</SummaryItemPrice>
-            </SummaryItem>
-            <SummaryItem>
-              <SummaryItemText>Estimated Shipping</SummaryItemText>
-              <SummaryItemPrice>RP. 5000</SummaryItemPrice>
-            </SummaryItem>
-            <SummaryItem>
-              <SummaryItemText>Shipping Discount</SummaryItemText>
-              <SummaryItemPrice>RP. 5000</SummaryItemPrice>
-            </SummaryItem>
-            <SummaryItem type="total">
-              <SummaryItemText>Total</SummaryItemText>
+          {cart.quantity != 0 && (
+            <Summary>
+              <SummaryTitle>ORDER SUMMARY</SummaryTitle>
+              <SummaryItem>
+                <SummaryItemText>Subtotal</SummaryItemText>
+                <SummaryItemPrice>{rupiah(cart.total)}</SummaryItemPrice>
+              </SummaryItem>
+              <SummaryItem>
+                <SummaryItemText>Estimated Shipping</SummaryItemText>
+                <SummaryItemPrice>RP. 5000</SummaryItemPrice>
+              </SummaryItem>
+              <SummaryItem>
+                <SummaryItemText>Shipping Discount</SummaryItemText>
+                <SummaryItemPrice>RP. 5000</SummaryItemPrice>
+              </SummaryItem>
+              <SummaryItem type="total">
+                <SummaryItemText>Total</SummaryItemText>
 
-              <SummaryItemPrice>{rupiah(cart.total)}</SummaryItemPrice>
-            </SummaryItem>
-            <StripeCheckout
-              name="DANS."
-              image="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpURUaVSCjKLiaN-OyXVS_wiHC7XHdXdkKCw&usqp=CAU"
-              billingAddress
-              shippingAddress
-              description={`Your total is ` + rupiah(cart.total)}
-              amount={cart.total * 100}
-              token={onToken}
-              stripeKey="pk_test_51LaHvlEnTY5UhwQ6HCHEvAFrjOQbdQstUsZZKaHXA7Zah6iyprIA6doytdV1r9PGKBx09elcgJwHAZY4YAjUtmN400thRwsldE"
-            >
-              <Button style={{ cursor: "pointer" }}>CHECKOUT NOW</Button>
-            </StripeCheckout>
-          </Summary>
+                <SummaryItemPrice>{rupiah(cart.total)}</SummaryItemPrice>
+              </SummaryItem>
+              <StripeCheckout
+                name="DANS."
+                image="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpURUaVSCjKLiaN-OyXVS_wiHC7XHdXdkKCw&usqp=CAU"
+                billingAddress
+                shippingAddress
+                description={`Your total is ` + rupiah(cart.total)}
+                amount={cart.total * 100}
+                token={onToken}
+                stripeKey="pk_test_51LaHvlEnTY5UhwQ6HCHEvAFrjOQbdQstUsZZKaHXA7Zah6iyprIA6doytdV1r9PGKBx09elcgJwHAZY4YAjUtmN400thRwsldE"
+              >
+                <Button style={{ cursor: "pointer" }}>CHECKOUT NOW</Button>
+              </StripeCheckout>
+            </Summary>
+          )}
         </Bottom>
       </Wrapper>
       <Footer />
